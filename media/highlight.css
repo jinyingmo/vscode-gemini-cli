@@ -1,0 +1,219 @@
+/* Highlight.js Styles for Code Blocks */
+.hljs {
+    display: block;
+    overflow-x: auto;
+    padding: 0;
+    background: transparent;
+    color: var(--vscode-editor-foreground);
+    font-family: var(--vscode-editor-font-family);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Comments */
+.hljs-comment,
+.hljs-quote {
+    color: var(--vscode-editorLineNumber-foreground);
+    font-style: italic;
+}
+
+/* Keywords */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-addition {
+    color: var(--vscode-symbolIcon-keywordForeground, #569cd6);
+}
+
+/* Strings */
+.hljs-string,
+.hljs-meta .hljs-meta-string,
+.hljs-regexp,
+.hljs-variable,
+.hljs-template-variable {
+    color: var(--vscode-symbolIcon-stringForeground, #ce9178);
+}
+
+/* Numbers */
+.hljs-number,
+.hljs-literal {
+    color: var(--vscode-symbolIcon-numberForeground, #b5cea8);
+}
+
+/* Functions */
+.hljs-function,
+.hljs-title,
+.hljs-section,
+.hljs-selector-id {
+    color: var(--vscode-symbolIcon-functionForeground, #dcdcaa);
+}
+
+/* Classes */
+.hljs-class,
+.hljs-type {
+    color: var(--vscode-symbolIcon-classForeground, #4ec9b0);
+}
+
+/* Tags */
+.hljs-tag,
+.hljs-name {
+    color: var(--vscode-symbolIcon-snippetForeground, #569cd6);
+}
+
+/* Attributes */
+.hljs-attr,
+.hljs-attribute {
+    color: var(--vscode-symbolIcon-propertyForeground, #9cdcfe);
+}
+
+/* Built-ins */
+.hljs-built_in,
+.hljs-builtin-name {
+    color: var(--vscode-symbolIcon-interfaceForeground, #4ec9b0);
+}
+
+/* Operators */
+.hljs-operator,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+    color: var(--vscode-symbolIcon-operatorForeground, #d4d4d4);
+}
+
+/* Punctuation */
+.hljs-punctuation {
+    color: var(--vscode-editor-foreground);
+}
+
+/* Meta */
+.hljs-meta {
+    color: var(--vscode-symbolIcon-namespaceForeground, #4ec9b0);
+}
+
+/* Deletion */
+.hljs-deletion {
+    color: var(--vscode-editorError-foreground, #f48771);
+}
+
+/* Emphasis */
+.hljs-emphasis {
+    font-style: italic;
+}
+
+/* Strong */
+.hljs-strong {
+    font-weight: bold;
+}
+
+/* Links */
+.hljs-link {
+    text-decoration: underline;
+}
+
+/* Language Specific */
+
+/* JavaScript/TypeScript */
+.language-javascript .hljs-keyword,
+.language-typescript .hljs-keyword {
+    color: #569cd6;
+}
+
+.language-javascript .hljs-string,
+.language-typescript .hljs-string {
+    color: #ce9178;
+}
+
+/* Python */
+.language-python .hljs-keyword {
+    color: #569cd6;
+}
+
+.language-python .hljs-string {
+    color: #ce9178;
+}
+
+.language-python .hljs-function {
+    color: #dcdcaa;
+}
+
+/* CSS */
+.language-css .hljs-selector-class,
+.language-css .hljs-selector-id {
+    color: #d7ba7d;
+}
+
+.language-css .hljs-property {
+    color: #9cdcfe;
+}
+
+.language-css .hljs-number {
+    color: #b5cea8;
+}
+
+/* HTML */
+.language-html .hljs-tag {
+    color: #569cd6;
+}
+
+.language-html .hljs-attr {
+    color: #9cdcfe;
+}
+
+.language-html .hljs-string {
+    color: #ce9178;
+}
+
+/* JSON */
+.language-json .hljs-attr {
+    color: #9cdcfe;
+}
+
+.language-json .hljs-string {
+    color: #ce9178;
+}
+
+.language-json .hljs-number {
+    color: #b5cea8;
+}
+
+/* Shell/Bash */
+.language-bash .hljs-built_in,
+.language-shell .hljs-built_in {
+    color: #4ec9b0;
+}
+
+/* Markdown */
+.language-markdown .hljs-section {
+    color: #569cd6;
+    font-weight: bold;
+}
+
+.language-markdown .hljs-quote {
+    color: #6a9955;
+}
+
+.language-markdown .hljs-code {
+    color: #ce9178;
+}
+
+/* Diff */
+.language-diff .hljs-addition {
+    color: #6a9955;
+    background-color: rgba(106, 153, 85, 0.1);
+}
+
+.language-diff .hljs-deletion {
+    color: #f48771;
+    background-color: rgba(244, 135, 113, 0.1);
+}
+
+/* SQL */
+.language-sql .hljs-keyword {
+    color: #569cd6;
+}
+
+.language-sql .hljs-string {
+    color: #ce9178;
+}
+
+.language-sql .hljs-number {
+    color: #b5cea8;
+}

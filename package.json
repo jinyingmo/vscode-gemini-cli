@@ -1,0 +1,186 @@
+{
+  "name": "vscode-gemini-cli",
+  "displayName": "Gemini CLI",
+  "description": "VSCode extension for running local Gemini CLI environment",
+  "version": "0.1.0",
+  "publisher": "gemini-cli",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Chat",
+    "Other"
+  ],
+  "keywords": [
+    "gemini",
+    "ai",
+    "cli",
+    "chat",
+    "assistant"
+  ],
+  "activationEvents": [
+    "onView:geminiCliPanel",
+    "onCommand:geminiCli.openPanel"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "geminiCli.openPanel",
+        "title": "Open Gemini CLI",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "geminiCli.newChat",
+        "title": "New Chat",
+        "icon": "$(add)"
+      },
+      {
+        "command": "geminiCli.clearChat",
+        "title": "Clear Chat",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "geminiCli.stopGeneration",
+        "title": "Stop Generation",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "geminiCli.openSettings",
+        "title": "Open Settings",
+        "icon": "$(gear)"
+      }
+    ],
+    "views": {
+      "geminiCli": [
+        {
+          "id": "geminiCliPanel",
+          "name": "Chat",
+          "type": "webview"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "geminiCli",
+          "title": "Gemini CLI",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Gemini CLI",
+      "properties": {
+        "geminiCli.executablePath": {
+          "type": "string",
+          "default": "gemini",
+          "description": "Path to Gemini CLI executable"
+        },
+        "geminiCli.model": {
+          "type": "string",
+          "default": "gemini-2.5-pro",
+          "enum": [
+            "gemini-2.5-pro",
+            "gemini-2.5-flash",
+            "gemini-2.0-pro",
+            "gemini-2.0-flash",
+            "gemini-pro"
+          ],
+          "description": "Gemini model to use"
+        },
+        "geminiCli.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Temperature for generation"
+        },
+        "geminiCli.maxTokens": {
+          "type": "number",
+          "default": 2048,
+          "description": "Maximum tokens per response"
+        },
+        "geminiCli.enableCodeHighlighting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable syntax highlighting in code blocks"
+        },
+        "geminiCli.autoScroll": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-scroll to latest message"
+        },
+        "geminiCli.showTimestamps": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show timestamps in chat"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "geminiCli.openPanel",
+        "key": "ctrl+shift+g",
+        "mac": "cmd+shift+g"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "geminiCli.newChat",
+          "when": "view == geminiCliPanel",
+          "group": "navigation"
+        },
+        {
+          "command": "geminiCli.clearChat",
+          "when": "view == geminiCliPanel",
+          "group": "navigation"
+        },
+        {
+          "command": "geminiCli.openSettings",
+          "when": "view == geminiCliPanel",
+          "group": "secondary"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "geminiCli.openPanel"
+        },
+        {
+          "command": "geminiCli.newChat"
+        },
+        {
+          "command": "geminiCli.clearChat"
+        },
+        {
+          "command": "geminiCli.stopGeneration"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.28.0",
+    "typescript": "^4.9.4",
+    "@vscode/test-electron": "^2.2.0",
+    "@vscode/vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "highlight.js": "^11.9.0",
+    "marked": "^9.1.6"
+  }
+}
