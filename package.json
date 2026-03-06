@@ -4,6 +4,7 @@
   "description": "VSCode extension for running Gemini CLI as an interactive terminal",
   "version": "0.2.0",
   "publisher": "gemini-cli",
+  "icon": "media/icon.png",
   "engines": {
     "vscode": "^1.74.0"
   },
@@ -27,7 +28,7 @@
       {
         "command": "geminiCli.openPanel",
         "title": "Open Gemini CLI",
-        "icon": "$(rocket)"
+        "icon": "media/terminal-icon.svg"
       }
     ],
     "views": {
@@ -35,7 +36,8 @@
         {
           "id": "geminiCliPanel",
           "name": "Terminal",
-          "type": "webview"
+          "type": "webview",
+          "icon": "media/terminal-icon.svg"
         }
       ]
     },
@@ -44,7 +46,7 @@
         {
           "id": "geminiCli",
           "title": "Gemini CLI",
-          "icon": "$(rocket)"
+          "icon": "media/terminal-icon.svg"
         }
       ]
     },

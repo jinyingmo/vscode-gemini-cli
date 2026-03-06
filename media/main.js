@@ -1,97 +1,262 @@
-// Gemini CLI – Embedded xterm.js terminal (optimized)
+// Gemini CLI – Multi-Session Terminal
 (function () {
     const vscode = acquireVsCodeApi();
-    const container = document.getElementById('terminal-container');
 
-    // --- 1. Initialize xterm.js ---
-    const term = new Terminal({
-        cursorBlink: true,
-        cursorStyle: 'bar',
-        fontFamily: "'Cascadia Code', 'Menlo', 'Monaco', 'Courier New', monospace",
-        fontSize: 13,
-        lineHeight: 1.2,
-        // Smooth scrolling reduces visual jitter
-        smoothScrollDuration: 100,
-        // Reduce overdraw; only render visible rows
-        overviewRulerWidth: 0,
-        scrollback: 5000,
-        theme: {
-            background:   '#0d1117',
-            foreground:   '#c9d1d9',
-            cursor:       '#3fb950',
-            cursorAccent: '#0d1117',
-            black:        '#0d1117',
-            red:          '#f85149',
-            green:        '#3fb950',
-            yellow:       '#d29922',
-            blue:         '#388bfd',
-            magenta:      '#bc8cff',
-            cyan:         '#39c5cf',
-            white:        '#c9d1d9',
-            brightBlack:  '#6e7681',
-            brightRed:    '#ff7b72',
-            brightGreen:  '#56d364',
-            brightYellow: '#e3b341',
-            brightBlue:   '#79c0ff',
-            brightMagenta:'#d2a8ff',
-            brightCyan:   '#56d4dd',
-            brightWhite:  '#f0f6fc',
-        },
-    });
+    // ── DOM refs ──
+    const tabsEl       = document.getElementById('tabs');
+    const termContainer= document.getElementById('terminal-container');
+    const btnNew       = document.getElementById('btn-new');
+    const btnHistory   = document.getElementById('btn-history');
+    const quotaBadge   = document.getElementById('quota-badge');
+    const historyPanel = document.getElementById('history-panel');
+    const historyList  = document.getElementById('history-list');
+    const btnCloseHist = document.getElementById('btn-close-history');
 
-    const fitAddon = new FitAddon.FitAddon();
-    term.loadAddon(fitAddon);
+    // ── State ──
+    let activeId = null;
+    const terminals = new Map(); // id -> { term, fitAddon, el }
+    let globalCols = 80;
+    let globalRows = 24;
 
-    // Open terminal in container
-    term.open(container);
-    fitAddon.fit();
+    // ── Init Resize Observer ──
+    let resizeTimer = null;
+    new ResizeObserver(() => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (activeId && terminals.has(activeId)) {
+                const session = terminals.get(activeId);
+                session.fitAddon.fit();
+                globalCols = session.term.cols;
+                globalRows = session.term.rows;
+                vscode.postMessage({ type: 'resize', id: activeId, cols: globalCols, rows: globalRows });
+            }
+        }, 150);
+    }).observe(termContainer);
 
-    // --- 2. Activate WebGL renderer for GPU-accelerated rendering (up to 900% faster) ---
-    // Falls back to canvas renderer if WebGL context is lost
-    if (typeof WebglAddon !== 'undefined') {
-        try {
-            const webgl = new WebglAddon.WebglAddon();
-            webgl.onContextLoss(() => {
-                // WebGL context lost (e.g. GPU reset) — dispose and fall back to canvas
-                webgl.dispose();
+    // Reveal after paint
+    requestAnimationFrame(() => { termContainer.style.visibility = 'visible'; });
+
+    // Tell extension we are ready
+    vscode.postMessage({ type: 'ready', cols: globalCols, rows: globalRows });
+
+    // ── Terminal lifecycle ──
+    function createTerminal(id) {
+        if (terminals.has(id)) return;
+
+        const el = document.createElement('div');
+        el.className = 'term-wrapper';
+        el.style.display = 'none';
+        el.style.width = '100%';
+        el.style.height = '100%';
+        termContainer.appendChild(el);
+
+        const term = new Terminal({
+            cursorBlink: true,
+            cursorStyle: 'bar',
+            fontFamily: "'Cascadia Code', 'Menlo', 'Monaco', 'Courier New', monospace",
+            fontSize: 13,
+            lineHeight: 1.2,
+            smoothScrollDuration: 100,
+            overviewRulerWidth: 0,
+            scrollback: 5000,
+            theme: {
+                background:'#0d1117', foreground:'#c9d1d9', cursor:'#3fb950', cursorAccent:'#0d1117',
+                black:'#0d1117', red:'#f85149', green:'#3fb950', yellow:'#d29922',
+                blue:'#388bfd', magenta:'#bc8cff', cyan:'#39c5cf', white:'#c9d1d9',
+                brightBlack:'#6e7681', brightRed:'#ff7b72', brightGreen:'#56d364',
+                brightYellow:'#e3b341', brightBlue:'#79c0ff', brightMagenta:'#d2a8ff',
+                brightCyan:'#56d4dd', brightWhite:'#f0f6fc',
+            },
+        });
+
+        const fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+        term.open(el);
+
+        if (typeof WebglAddon !== 'undefined') {
+            try {
+                const webgl = new WebglAddon.WebglAddon();
+                webgl.onContextLoss(() => webgl.dispose());
+                term.loadAddon(webgl);
+            } catch (_) {}
+        }
+
+        term.onData(data => vscode.postMessage({ type: 'input', id, data }));
+        terminals.set(id, { term, fitAddon, el });
+    }
+
+    function switchTerminal(id) {
+        if (activeId === id && terminals.has(id) && terminals.get(id).el.style.display === 'block') return;
+
+        // Hide all
+        for (const session of terminals.values()) {
+            session.el.style.display = 'none';
+        }
+
+        activeId = id;
+
+        // Show selected
+        if (terminals.has(id)) {
+            const session = terminals.get(id);
+            session.el.style.display = 'block';
+            
+            // Give DOM time to update display:block before fitting
+            requestAnimationFrame(() => {
+                session.fitAddon.fit();
+                session.term.focus();
+                globalCols = session.term.cols;
+                globalRows = session.term.rows;
+                vscode.postMessage({ type: 'resize', id, cols: globalCols, rows: globalRows });
             });
-            term.loadAddon(webgl);
-        } catch (_) {
-            // WebGL not supported — canvas renderer is used by default
         }
     }
 
-    // --- 2. Reveal terminal only after it's fully initialized (prevents FOUC) ---
-    // Use requestAnimationFrame to wait for first paint
-    requestAnimationFrame(() => {
-        container.style.visibility = 'visible';
-    });
+    function destroyTerminal(id) {
+        if (terminals.has(id)) {
+            const session = terminals.get(id);
+            session.term.dispose();
+            if (session.el.parentNode) {
+                session.el.parentNode.removeChild(session.el);
+            }
+            terminals.delete(id);
+        }
+    }
 
-    // --- 3. Notify extension we're ready (triggers data flush + PTY spawn) ---
-    vscode.postMessage({ type: 'ready', cols: term.cols, rows: term.rows });
+    // ── Extension messages ──
+    window.addEventListener('message', ({ data: msg }) => {
+        switch (msg.type) {
+            case 'tabCreated':
+                createTerminal(msg.id);
+                if (msg.isActive) switchTerminal(msg.id);
+                break;
 
-    // --- 4. Forward keypresses to PTY ---
-    term.onData((data) => {
-        vscode.postMessage({ type: 'input', data });
-    });
+            case 'data':
+                if (terminals.has(msg.id)) {
+                    terminals.get(msg.id).term.write(msg.data);
+                }
+                break;
 
-    // --- 5. Debounced resize handler to prevent resize loop flickering ---
-    let resizeTimer = null;
-    const resizeObserver = new ResizeObserver(() => {
-        if (resizeTimer) clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            fitAddon.fit();
-            vscode.postMessage({ type: 'resize', cols: term.cols, rows: term.rows });
-            resizeTimer = null;
-        }, 150);
-    });
-    resizeObserver.observe(container);
+            case 'tabSwitched':
+                switchTerminal(msg.id);
+                break;
 
-    // --- 6. Receive PTY output ---
-    window.addEventListener('message', (event) => {
-        const msg = event.data;
-        if (msg.type === 'data') {
-            term.write(msg.data);
+            case 'tabList':
+                renderTabs(msg.tabs);
+                // Ensure correct terminal is visible if activeId changed remotely
+                const activeTab = msg.tabs.find(t => t.isActive);
+                if (activeTab && activeTab.id !== activeId) {
+                    switchTerminal(activeTab.id);
+                }
+                break;
+
+            case 'tabClosed':
+                destroyTerminal(msg.id);
+                if (msg.nextId) switchTerminal(msg.nextId);
+                break;
+
+            case 'sessionList':
+                renderHistory(msg.sessions);
+                break;
+
+            case 'quotaUpdate':
+                updateQuota(msg.text);
+                break;
         }
     });
+
+    // ── Toolbar buttons ──
+    btnNew.addEventListener('click', () => {
+        vscode.postMessage({ type: 'newSession', cols: globalCols, rows: globalRows });
+    });
+
+    btnHistory.addEventListener('click', () => {
+        historyPanel.classList.toggle('hidden');
+        if (!historyPanel.classList.contains('hidden')) {
+            vscode.postMessage({ type: 'listHistorySessions' });
+        }
+    });
+
+    btnCloseHist.addEventListener('click', () => historyPanel.classList.add('hidden'));
+
+    // ── Render Tabs ──
+    function renderTabs(tabs) {
+        tabsEl.innerHTML = '';
+        for (const tab of tabs) {
+            const el = document.createElement('div');
+            el.className = 'tab' + (tab.isActive ? ' active' : '') + (tab.exited ? ' exited' : '');
+            
+            const nameEl = document.createElement('span');
+            nameEl.className = 'tab-name';
+            nameEl.textContent = tab.name;
+
+            const closeEl = document.createElement('button');
+            closeEl.className = 'tab-close';
+            closeEl.textContent = '✕';
+            closeEl.title = 'Close session';
+            closeEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                vscode.postMessage({ type: 'closeSession', id: tab.id });
+            });
+
+            el.appendChild(nameEl);
+            el.appendChild(closeEl);
+            el.addEventListener('click', () => {
+                if (!tab.isActive) {
+                    vscode.postMessage({ type: 'switchSession', id: tab.id });
+                }
+            });
+
+            tabsEl.appendChild(el);
+
+            if (tab.isActive) {
+                el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            }
+        }
+    }
+
+    // ── Render History ──
+    function renderHistory(sessions) {
+        historyList.innerHTML = '';
+        if (!sessions || sessions.length === 0) {
+            historyList.innerHTML = '<div class="history-empty">No saved sessions found</div>';
+            return;
+        }
+        for (const s of sessions) {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+
+            const label = document.createElement('span');
+            label.className = 'history-label';
+            label.textContent = s.label;
+
+            const btn = document.createElement('button');
+            btn.className = 'history-resume';
+            btn.textContent = 'Resume';
+            btn.addEventListener('click', () => {
+                historyPanel.classList.add('hidden');
+                vscode.postMessage({ type: 'resumeSession', index: s.index, cols: globalCols, rows: globalRows });
+            });
+
+            item.appendChild(label);
+            item.appendChild(btn);
+            historyList.appendChild(item);
+        }
+    }
+
+    // ── Quota badge ──
+    function updateQuota(text) {
+        if (!text) return;
+        quotaBadge.textContent = text;
+        quotaBadge.classList.remove('hidden', 'warning', 'danger');
+
+        const lower = text.toLowerCase();
+        if (/exceeded|limit/.test(lower)) {
+            quotaBadge.classList.add('danger');
+        } else {
+            const nums = text.match(/\d+/g);
+            if (nums && parseInt(nums[0]) < 10) {
+                quotaBadge.classList.add('warning');
+            }
+        }
+    }
 })();
